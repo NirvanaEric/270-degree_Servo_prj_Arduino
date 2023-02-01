@@ -1,0 +1,120 @@
+// C++ code
+//
+#include <IRremote.h>
+#include <Servo.h>
+#include <TM1637Display.h>
+
+#define CLK 2
+#define DIO 3
+int baseAngle = 60;
+int angleuUL = 180;
+int RECV_PIN = 7;
+int SERVO_PIN = 9;
+int angle;
+
+Servo myservo; 
+IRrecv irrecv(RECV_PIN);
+decode_results results;
+TM1637Display tm1637(CLK,DIO);
+
+long KEY_CODE_ZERO = 0xFF6897;
+long KEY_CODE_ONE = 0xFF30CF;
+long KEY_CODE_TWO = 0xFF18E7;
+long KEY_CODE_THREE = 0xFF7A85;
+//long KEY_CODE_FOUR = 0xFF10EF;
+long KEY_CODE_STEP_INC = 0xFFA857;
+long KEY_CODE_STEP_DEC = 0xFFE01F;
+long KEY_CODE_INC = 0xFFE21D;  //CH+
+long KEY_CODE_DEC = 0xFFA25D; //CH-
+long KEY_CODE_LONG_PRESS = 0xFFFFFFFF;
+long longPressKey = -1; //长按下的那个键
+
+void setup()
+{
+  Serial.begin(9600);
+  irrecv.enableIRIn();
+  myservo.attach(SERVO_PIN,500,2500);
+  tm1637.setBrightness(0x0f);
+}
+
+void loop()
+{
+  if(irrecv.decode(&results))
+  {
+    Serial.println(results.value,HEX);
+    if(results.value == KEY_CODE_STEP_INC){
+      angle+=baseAngle;
+      longPressKey = -1;
+    }
+    else if(results.value == KEY_CODE_STEP_DEC){
+      angle-=baseAngle;
+      longPressKey = -1;
+    }
+    else if(results.value == KEY_CODE_ZERO){
+      angle=0*baseAngle;
+      longPressKey = -1;
+    }
+    else if(results.value == KEY_CODE_ONE){
+      angle=1*baseAngle;
+      longPressKey = -1;
+    }
+    else if (results.value == KEY_CODE_TWO){
+      angle=2*baseAngle;
+      longPressKey = -1;
+    }
+    else if(results.value == KEY_CODE_THREE){
+      angle=3*baseAngle;
+      longPressKey = -1;
+    }
+    //else if(results.value == KEY_CODE_FOUR){
+    //  angle=4*baseAngle;
+    //  longPressKey = -1;
+    //}
+    else if(results.value == KEY_CODE_INC){
+      longPressKey = KEY_CODE_INC;
+    }
+    else if(results.value == KEY_CODE_DEC){
+      longPressKey = KEY_CODE_DEC;
+    }
+    
+    if(results.value == KEY_CODE_LONG_PRESS && longPressKey == KEY_CODE_INC){
+      angle+=1;
+      delay(10);
+    }
+    if(results.value == KEY_CODE_LONG_PRESS && longPressKey == KEY_CODE_DEC){
+      angle-=1;
+      delay(10);
+    } 
+    
+    irrecv.resume();
+  }
+  
+  angle = constrain(angle,0,angleuUL);
+  //myservo.write(angle);
+  rotation(angle);
+  delay(1500);
+  //tm1637.showNumberDec(int(1.5*myservo.read()),false);//180度转270度因数：1.5
+}
+
+void rotation(int angle)
+{
+  int anglex = myservo.read();
+  if(angle>anglex)
+  {
+    for(int i=anglex;i<=angle;i++)
+    {
+      myservo.write(i);
+      tm1637.showNumberDec(int(1.5*myservo.read()),false);
+      delay(50);
+    }
+  }
+  else if(angle<anglex)
+  {
+    for(int i=anglex;i>=angle;i--)
+    {
+      myservo.write(i);
+      tm1637.showNumberDec(int(1.5*myservo.read()),false);
+      delay(50);
+    }
+  }
+}
