@@ -65,6 +65,8 @@ void loop()
 }
 ```
 
+
+
 # 舵机（servo motor）
 
 ## 参考
@@ -88,9 +90,11 @@ void loop()
 - 180°舵机/270°舵机 - 可以控制角度
 - 360°舵机 - 可以控制正反转和转速
 
-## 接线： 
+## 接线
 
-棕色：GND线，红色：5V电源线，橙色：信号线
+* 棕色：GND线
+* 红色：5V电源线
+* 橙色：信号线 （示例接9脚）
 
 ## 控制原理简述
 
@@ -118,11 +122,11 @@ void loop()
 | 1.5ms    | 速度为0      |
 | 2.5ms    | 反向最大转速 |
 
-## 标准库
+## 库及常用函数
 
 #include <Servo.h>
 
-内置函数
+常用函数
 
 - attach() : 定义舵机的控制引脚
 - write() : 将一个角度值写入舵机
@@ -159,28 +163,30 @@ void loop()
 
 马达的5V要与其他控制元件的5V分开（选取UNO板上的不同5V接口），避免马达噪音带来的干扰，尤其是对红外遥控的干扰。
 
+
+
 # TM1637 LED display
 
 ## 参考
 
-[如何基于Arduino使用TM1637四位七段数码管显示模块 - Arduino专区 - 一板网电子技术论坛 (codeproject.com)](http://www.codeproject.com/)
+[如何基于Arduino使用TM1637四位七段数码管显示模块 - Arduino专区 - 一板网电子技术论坛 (yiboard.com)](https://www.yiboard.com/thread-1713-1-1.html)
 
 ## 接线
 
 ![1675341338263](image/LearningNote/1675341338263.png)
 
-| 引脚 | 定义          |
-| ---- | ------------- |
-| GND  | 接地          |
-| VCC  | 电源+         |
-| DIO  | 数据输入/输出 |
-| CLK  | 始终输入      |
+| 引脚 | 定义                 |
+| ---- | -------------------- |
+| GND  | 接地                 |
+| VCC  | 电源+                |
+| DIO  | 数据输入/输出 （A2） |
+| CLK  | 时钟输入（A3）       |
 
-## 库
+## 库及常用函数
 
 #include <TM1637Display.h>
 
-内置函数
+常用函数
 
 * setSegments() - 设置每个数字段的原始值
 * showNumberDec() - 显示一个十进制数
@@ -190,6 +196,8 @@ void loop()
 
 * clear() - 清空显示内容
 
+
+
 # I2C LCD display
 
 ## 参考
@@ -198,8 +206,125 @@ void loop()
 
 [Arduino下使用SSD1306驱动的OLED - 简书 (jianshu.com)](https://www.jianshu.com/p/1b77a1550f15)
 
+[Arduino-LiquidCrystal_I2C 液晶库 - 天子骄龙 - 博客园 (cnblogs.com)](https://www.cnblogs.com/liming19680104/p/10933111.html)
+
+## 接线
+
+![1675346608855](image/LearningNote/1675346608855.png)
+
+| 引脚 | 定义              |
+| ---- | ----------------- |
+| GND  | 电源地            |
+| VCC  | 电源正            |
+| SCL  | 时钟 （示例接A5） |
+| SDA  | 数据 （示例接A4） |
+
+## 库及常用函数
+
+#include <LiquidCrystal_I2C.h>
+
+常用函数
+
+* lcd.init() - lcd初始化
+* setCursor(x,y) - 设置起始坐标 (参数1:列, 参数2:行)
+* lcd.print() - 显示内容
+* lcd.clear() - 清空显示屏
+* lcd.backlight() - 开启lcd背光灯
+
+## 示例代码
+
+```c
+#include <Wire.h>  //LiquidCrystal_I2C库需要要用该库
+#include <LiquidCrystal_I2C.h>  //导入液晶屏库
+
+
+LiquidCrystal_I2C mylcd(0x27,16,2);  //创建液晶屏对象
+//参数1  液晶屏地址
+//参数2和参数3   2行16列
+void setup() {
+  mylcd.init();//初始化
+  mylcd.backlight(); //开启lcd背光灯
+
+}
+
+void loop() {
+   mylcd.setCursor(0, 0); //设置光标
+  mylcd.print("hello");//输出内容
+  mylcd.setCursor(0, 1);
+  mylcd.print("lm");
+  delay(1000);
+
+}
+```
+
 # IR红外遥控
 
 ## 参考
 
+[IRremote库 – 太极创客 (taichi-maker.com)](http://www.taichi-maker.com/homepage/reference-index/arduino-library-index/irremote-library/)
+
 [arduino 红外遥控器控制LED灯 - MarcoReus - 博客园 (cnblogs.com)](https://www.cnblogs.com/Westfalen/p/5829248.html)
+
+[Arduino-IRremote/Arduino-IRremote: Infrared remote library for Arduino: send and receive infrared signals with multiple protocols (github.com)](https://github.com/Arduino-IRremote/Arduino-IRremote)
+
+## 红外接收器接线
+
+![1675344792418](image/LearningNote/1675344792418.png)
+
+例如：VOUT接7脚
+
+## 库及常用函数
+
+#include <IRremote.h>
+
+注意：2.x版本代码和3.x以上代码使用上不太一样
+
+## 示例代码
+
+2.x版本库
+
+```c
+#include <IRremote.h>
+
+IRrecv irrecv(RECV_PIN);
+decode_results results;
+
+void setup()
+{
+...
+  irrecv.enableIRIn(); // Start the receiver
+}
+
+void loop() {
+  if (irrecv.decode(&results)) {
+      Serial.println(results.value, HEX);
+      ...
+      irrecv.resume(); // Receive the next value
+  }
+  ...
+}
+```
+
+3.x / 4.x 版本库
+
+```c
+#include <IRremote.hpp>
+
+void setup()
+{
+...
+  IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK); // Start the receiver
+}
+
+void loop() {
+  if (IrReceiver.decode()) {
+      Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX); // Print "old" raw data
+      /* USE NEW 3.x FUNCTIONS */
+      IrReceiver.printIRResultShort(&Serial); // Print complete received data in one line
+      IrReceiver.printIRSendUsage(&Serial);   // Print the statement required to send this data
+      ...
+      IrReceiver.resume(); // Enable receiving of the next value
+  }
+  ...
+}
+```
